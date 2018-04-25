@@ -1,0 +1,6 @@
+[package]
+name = "rustfk"
+version = "0.1.0"
+authors = ["Karthik Karanth <karanth.karthik@gmail.com>"]
+
+[dependencies]

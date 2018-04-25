@@ -1,0 +1,19 @@
+extern crate rustfk;
+
+use std::env;
+use std::fs::File;
+use std::io::Read;
+
+use rustfk::RustFk;
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+    let mut f = File::open(filename).unwrap();
+
+    let mut commands = String::new();
+    f.read_to_string(&mut commands).unwrap();
+
+    let mut interpreter = RustFk::new(40, &commands[0..commands.len()-1]);
+    interpreter.run().unwrap();
+}
