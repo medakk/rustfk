@@ -11,7 +11,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let config = Config::new(&args).unwrap_or_else(|err| {
-        eprintln!("error parsing arguments: {}", err);
+        eprintln!("error parsing arguments: {}\n", err);
         process::exit(1);
     });
 

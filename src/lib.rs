@@ -1,21 +1,22 @@
-use std::io::Read;
+use std::io::{Read, Write};
 
 pub struct RustFk {
     d_ptr: usize,
     i_ptr: usize,
     data: Vec<u8>,
     commands: Vec<u8>,
-    input: std::io::Bytes<std::io::Stdin>,
+    output: Box<Write>,
+    input: Box<Read>,
 }
 
 const INC_DPTR: u8 = '>' as u8;
 const DEC_DPTR: u8 = '<' as u8;
 const INC_DATA: u8 = '+' as u8;
 const DEC_DATA: u8 = '-' as u8;
-const WRITE: u8 = '.' as u8;
-const READ: u8 = ',' as u8;
-const JUMP_F: u8 = '[' as u8;
-const JUMP_B: u8 = ']' as u8;
+const WRITE:    u8 = '.' as u8;
+const READ:     u8 = ',' as u8;
+const JUMP_F:   u8 = '[' as u8;
+const JUMP_B:   u8 = ']' as u8;
 
 impl RustFk {
     pub fn new(d_size: usize, commands: Vec<u8>) -> RustFk {
@@ -28,7 +29,8 @@ impl RustFk {
             i_ptr: i_ptr,
             data: data,
             commands: commands,
-            input: std::io::stdin().bytes(),
+            input: Box::new(std::io::stdin()),
+            output: Box::new(std::io::stdout()),
         }
     }
 
@@ -80,15 +82,18 @@ impl RustFk {
                 }
             },
             WRITE => {
-                print!("{}", self.data[self.d_ptr] as char);
+                let buf = &self.data[self.d_ptr..self.d_ptr+1];
+                if let Err(_) = self.output.write(buf) {
+                    return Err(RustFkError { msg: "unable to write output" });
+                }
             },
             READ => {
-                let ch = match self.input.next() {
-                    Some(Ok(c)) => c,
-                    _ => return Err(RustFkError { msg: "no input available" }),
-                };
-                
-                self.data[self.d_ptr] = ch;
+                // We take a one byte mutable slice from the data vector, and
+                // read a byte into it from the input source
+                let buf = &mut self.data[self.d_ptr..self.d_ptr+1];
+                if let Err(_) = self.input.read_exact(buf) {
+                    return Err(RustFkError { msg: "no input available" });
+                }
             },
             JUMP_F => {
                 if self.data[self.d_ptr] == 0 {
@@ -138,7 +143,7 @@ impl RustFk {
             },
 
             _ => {
-                // Brainf*** ignores comments other than those specified
+                // Brainf*** ignores commands other than those specified
             },
         }
 
@@ -149,4 +154,14 @@ impl RustFk {
 #[derive(Debug)]
 pub struct RustFkError {
     msg: &'static str,
+}
+
+#[cfg(tests)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nothing() {
+
+    }
 }
