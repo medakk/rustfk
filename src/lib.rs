@@ -1,4 +1,5 @@
 use std::io::{Read, Write};
+use std::fs::File;
 
 pub struct RustFk {
     d_ptr: usize,
@@ -156,12 +157,30 @@ pub struct RustFkError {
     msg: &'static str,
 }
 
-#[cfg(tests)]
-mod tests {
-    use super::*;
+pub struct Config {
+    filename: String,
+}
 
-    #[test]
-    fn nothing() {
+impl Config {
+    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+        if args.len() < 2 {
+            return Err("not enough arguments");
+        }
 
+        let filename = args[1].clone();
+
+        Ok(Config {
+            filename,
+        } )
+    }
+
+    pub fn run(&self) -> Result<(), RustFkError> {
+        let mut f = File::open(&self.filename).unwrap();
+
+        let mut commands: Vec<u8> = vec![];
+        f.read_to_end(&mut commands).unwrap();
+
+        let mut interpreter = RustFk::new(30000, commands);
+        interpreter.run()
     }
 }
