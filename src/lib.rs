@@ -50,9 +50,19 @@ impl RustFk {
     fn feed(&mut self, cmd: u8) -> Result<(), RustFkError> {
         match cmd {
             INC_DPTR => {
+                if self.d_ptr == self.data.len()-1 {
+                    return Err(RustFkError{
+                        msg: "cannot increment pointer, out of tape",
+                    })
+                }
                 self.d_ptr += 1;
             },
             DEC_DPTR => {
+                if self.d_ptr == 0 {
+                    return Err(RustFkError{
+                        msg: "cannot decrement pointer, out of tape",
+                    })
+                }
                 self.d_ptr -= 1;
             },
             INC_DATA => {
@@ -73,10 +83,10 @@ impl RustFk {
                 print!("{}", self.data[self.d_ptr] as char);
             },
             READ => {
-                let ch = self.input
-                    .next()
-                    .map(|x| x.unwrap())
-                    .unwrap();
+                let ch = match self.input.next() {
+                    Some(Ok(c)) => c,
+                    _ => return Err(RustFkError { msg: "no input available" }),
+                };
                 
                 self.data[self.d_ptr] = ch;
             },
@@ -93,7 +103,13 @@ impl RustFk {
                         } else if cmd == JUMP_F {
                             brackets_seen += 1;
                         }
+
                         self.i_ptr += 1;
+                        if self.i_ptr == self.commands.len() {
+                            return Err(RustFkError {
+                                msg: "no matching ] found",
+                            });
+                        }
                     }
                 }
             },
@@ -109,6 +125,12 @@ impl RustFk {
                             brackets_seen -= 1
                         } else if cmd == JUMP_B {
                             brackets_seen += 1;
+                        }
+
+                        if self.i_ptr == 0 {
+                            return Err(RustFkError {
+                                msg: "no matching [ found",
+                            });
                         }
                         self.i_ptr -= 1;
                     }
@@ -126,5 +148,5 @@ impl RustFk {
 
 #[derive(Debug)]
 pub struct RustFkError {
-    msg: String,
+    msg: &'static str,
 }
