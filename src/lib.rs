@@ -19,6 +19,9 @@ const JUMP_B:   u8 = ']' as u8;
 
 
 impl RustFk {
+    /// Constructs a new RustFk interpreter
+    /// 
+    /// `d_size` is the amount of bytes to allocate for the tape
     pub fn new(d_size: usize, commands: Vec<u8>) -> RustFk {
         let data = vec![0; d_size];
         let d_ptr = d_size / 2;
@@ -32,6 +35,7 @@ impl RustFk {
         }
     }
 
+    /// Run the interpreter using the given streams of input and output
     pub fn run<R: Read, W: Write>(&mut self, input: &mut R, output: &mut W) -> Result<(), RustFkError> {
         loop {
             if self.i_ptr >= self.commands.len() {
@@ -159,6 +163,7 @@ pub struct Config {
 }
 
 impl Config {
+    /// Create a new config to run the interpreter via command line
     pub fn new(args: &[String]) -> Result<Config, &'static str> {
         if args.len() < 2 {
             return Err("not enough arguments");
@@ -171,6 +176,8 @@ impl Config {
         } )
     }
 
+    /// Run the interpreter using stdin as input and stdout as output
+    /// allocates 30000 bytes for the tape
     pub fn run(&self) -> Result<(), RustFkError> {
         let mut f = File::open(&self.filename).unwrap();
 
