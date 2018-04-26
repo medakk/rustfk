@@ -5,9 +5,7 @@ pub struct RustFk {
     d_ptr: usize,
     i_ptr: usize,
     data: Vec<u8>,
-    commands: Vec<u8>,
-    output: Box<Write>,
-    input: Box<Read>,
+    commands: Vec<u8>
 }
 
 const INC_DPTR: u8 = '>' as u8;
@@ -21,10 +19,7 @@ const JUMP_B:   u8 = ']' as u8;
 
 
 impl RustFk {
-    pub fn new<R, W>(d_size: usize, commands: Vec<u8>, input: R, output: W) -> RustFk
-        where R: 'static + Read,
-              W: 'static + Write {
-
+    pub fn new(d_size: usize, commands: Vec<u8>) -> RustFk {
         let data = vec![0; d_size];
         let d_ptr = d_size / 2;
         let i_ptr = 0;
@@ -34,12 +29,10 @@ impl RustFk {
             i_ptr: i_ptr,
             data: data,
             commands: commands,
-            input: Box::new(input),
-            output: Box::new(output),
         }
     }
 
-    pub fn run(&mut self) -> Result<(), RustFkError> {
+    pub fn run<R: Read, W: Write>(&mut self, input: &mut R, output: &mut W) -> Result<(), RustFkError> {
         loop {
             if self.i_ptr >= self.commands.len() {
                 break
@@ -47,14 +40,14 @@ impl RustFk {
 
             let next_cmd = self.commands[self.i_ptr];
             // println!("Feeding {}", next_cmd as char);
-            self.feed(next_cmd)?;
+            self.feed(next_cmd, input, output)?;
             self.i_ptr += 1;
         }
 
         Ok(())
     }
 
-    fn feed(&mut self, cmd: u8) -> Result<(), RustFkError> {
+    fn feed<R: Read, W: Write>(&mut self, cmd: u8, input: &mut R, output: &mut W) -> Result<(), RustFkError> {
         match cmd {
             INC_DPTR => {
                 if self.d_ptr == self.data.len()-1 {
@@ -88,7 +81,7 @@ impl RustFk {
             },
             WRITE => {
                 let buf = &self.data[self.d_ptr..self.d_ptr+1];
-                if let Err(_) = self.output.write(buf) {
+                if let Err(_) = output.write(buf) {
                     return Err(RustFkError { msg: "unable to write output" });
                 }
             },
@@ -96,7 +89,7 @@ impl RustFk {
                 // We take a one byte mutable slice from the data vector, and
                 // read a byte into it from the input source
                 let buf = &mut self.data[self.d_ptr..self.d_ptr+1];
-                if let Err(_) = self.input.read_exact(buf) {
+                if let Err(_) = input.read_exact(buf) {
                     return Err(RustFkError { msg: "no input available" });
                 }
             },
@@ -184,7 +177,9 @@ impl Config {
         let mut commands: Vec<u8> = vec![];
         f.read_to_end(&mut commands).unwrap();
 
-        let mut interpreter = RustFk::new(30000, commands, std::io::stdin(), std::io::stdout());
-        interpreter.run()
+        let mut input = std::io::stdin();
+        let mut output = std::io::stdout();
+        let mut interpreter = RustFk::new(30000, commands);
+        interpreter.run(&mut input, &mut output)
     }
 }
