@@ -19,8 +19,12 @@ const READ:     u8 = ',' as u8;
 const JUMP_F:   u8 = '[' as u8;
 const JUMP_B:   u8 = ']' as u8;
 
+
 impl RustFk {
-    pub fn new(d_size: usize, commands: Vec<u8>) -> RustFk {
+    pub fn new<R, W>(d_size: usize, commands: Vec<u8>, input: R, output: W) -> RustFk
+        where R: 'static + Read,
+              W: 'static + Write {
+
         let data = vec![0; d_size];
         let d_ptr = d_size / 2;
         let i_ptr = 0;
@@ -30,8 +34,8 @@ impl RustFk {
             i_ptr: i_ptr,
             data: data,
             commands: commands,
-            input: Box::new(std::io::stdin()),
-            output: Box::new(std::io::stdout()),
+            input: Box::new(input),
+            output: Box::new(output),
         }
     }
 
@@ -180,7 +184,7 @@ impl Config {
         let mut commands: Vec<u8> = vec![];
         f.read_to_end(&mut commands).unwrap();
 
-        let mut interpreter = RustFk::new(30000, commands);
+        let mut interpreter = RustFk::new(30000, commands, std::io::stdin(), std::io::stdout());
         interpreter.run()
     }
 }
