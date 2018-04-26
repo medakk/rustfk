@@ -2,6 +2,8 @@
 name = "rustfk"
 version = "0.1.0"
 authors = ["Karthik Karanth <karanth.karthik@gmail.com>"]
+description = "A Brainfuck interpreter"
+license = "MIT"
 
 [[bin]]
 doc = false
