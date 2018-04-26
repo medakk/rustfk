@@ -3,4 +3,9 @@ name = "rustfk"
 version = "0.1.0"
 authors = ["Karthik Karanth <karanth.karthik@gmail.com>"]
 
+[[bin]]
+doc = false
+path = "src/bin/main.rs"
+name = "rustfk"
+
 [dependencies]
